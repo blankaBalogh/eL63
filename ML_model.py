@@ -119,7 +119,7 @@ def train_ML_model(x_data, y_data, NN_model, \
         batch_size=batch_size, verbose=0, validation_data=(x_test, y_test), callbacks=[ckpt, LearningRateScheduler(scheduler)])
     
     # -- Loading best ANN weights
-    NN_model.model.load_weights('weights/weights-MLP-L63.h5')
+    NN_model.model.load_weights('weights/weights-MLP-eL63.h5')
 
 
 
