@@ -30,6 +30,8 @@ class ML_model():
         self.out_dim = 3
         self.nlays = [64, 32, 16]
         self.norms = None
+        self.eofs = None
+        self.train_test_segments = False 
         self.set_params(dic)
 
         self.model = None        
@@ -91,13 +93,26 @@ class ML_model():
 def train_ML_model(x_data, y_data, NN_model, \
         batch_size=512, learning_rate=0.001, n_epochs=10):
     
-    x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, test_size=0.2, random_state=42)
+    np.random.seed(42)
+    if NN_model.train_test_segments :
+        print("Selecting training segment...")
+        x_test = x_data[8000:]
+        x_train = x_data[:8000]
+
+        y_test = y_data[8000:]
+        y_train = y_data[:8000]
+
+    else :
+        print("Random train_test_split...")
+        x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, 
+                test_size=0.2, random_state=42)
 
     # -- Model checkpoint : saving best model weights wrt "monitor" score.
-    ckpt = ModelCheckpoint('weights/weights-MLP-eL63.h5', monitor='val_r2_score_keras', save_best_only=True, verbose=0, mode="max")
+    ckpt = ModelCheckpoint('weights/weights-MLP-L63-'+str(NN_model.in_dim)+'.h5', 
+            monitor='val_r2_score_keras', save_best_only=True, verbose=0, mode="max")
 
     def scheduler(epoch, lr):
-        if epoch < 15:
+        if epoch < 10:
             return lr
         else:
             return lr * np.exp(-0.05)
@@ -114,12 +129,12 @@ def train_ML_model(x_data, y_data, NN_model, \
 
     NN_model.model.compile(loss=loss_fn, optimizer=optim, metrics=[r2_score_keras, lr_metric])
 
-    print('training %s model...'%NN_model.name)
+
     history = NN_model.model.fit(x_train, y_train, epochs=n_epochs,
-        batch_size=batch_size, verbose=0, validation_data=(x_test, y_test), callbacks=[ckpt, LearningRateScheduler(scheduler)])
+        batch_size=batch_size, verbose=2, validation_data=(x_test, y_test), callbacks=[ckpt, LearningRateScheduler(scheduler)])
     
     # -- Loading best ANN weights
-    NN_model.model.load_weights('weights/weights-MLP-eL63.h5')
+    NN_model.model.load_weights('weights/weights-MLP-L63-'+str(NN_model.in_dim)+'.h5')
 
 
 
@@ -164,3 +179,4 @@ def get_optimizer(argument, lrate, **kwargs) :
         return("You asked for optimizer : ", argument, \
                 ". Available loss functions are : MSE, MAE.")
     return optim
+
